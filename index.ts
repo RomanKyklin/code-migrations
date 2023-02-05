@@ -6,6 +6,13 @@ import generate from "@babel/generator";
 import * as prettier from "prettier";
 import * as eslint from "eslint";
 import * as babelCore from "@babel/core";
+import * as t from "@babel/types";
+
+function functionToStringTransformer(path) {
+  const node = path.node;
+  if (!t.isFunctionDeclaration(node)) return;
+  path.replaceWith(t.stringTypeAnnotation());
+};
 
 
 function parseArgumentsIntoOptions(rawArgs): string {
@@ -23,7 +30,7 @@ function parseArgumentsIntoOptions(rawArgs): string {
 function traverseAST(ast: babel.ParseResult<any>): void {
   const visitor = {
     enter(path) {
-      console.log(path.type);
+      functionToStringTransformer(path);
     },
   };
 
@@ -41,8 +48,6 @@ async function readDirectoryFiles(
     const contents = await Promise.all(
       filteredForTesting.map(async (file) => {
         const filePath = path.join(dir, file);
-        console.log(filePath);
-
         const content = await fs.promises.readFile(filePath, "utf-8");
         return { file, content: content.toString() };
       })
