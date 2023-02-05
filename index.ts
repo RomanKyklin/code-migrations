@@ -8,6 +8,7 @@ import * as eslint from "eslint";
 import * as babelCore from "@babel/core";
 import * as t from "@babel/types";
 
+
 function functionToStringTransformer(path) {
   const node = path.node;
   if (!t.isFunctionDeclaration(node)) return;
