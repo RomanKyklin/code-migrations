@@ -6,8 +6,6 @@ import generate from "@babel/generator";
 import * as prettier from "prettier";
 import * as eslint from "eslint";
 import * as babelCore from "@babel/core";
-
-
 function parseArgumentsIntoOptions(rawArgs): string {
   const args = yargs(rawArgs)
     .option("path", {
@@ -16,35 +14,35 @@ function parseArgumentsIntoOptions(rawArgs): string {
       demandOption: true,
     })
     .parseSync();
-
   return args.path;
 }
-
 function traverseAST(ast: babel.ParseResult<any>): void {
   const visitor = {
     enter(path) {
       console.log(path.type);
     },
   };
-
   babelCore.traverse(ast, visitor);
 }
-
-async function readDirectoryFiles(
-  dir: string
-): Promise<Array<{ file: string; content: string }>> {
+async function readDirectoryFiles(dir: string): Promise<
+  Array<{
+    file: string,
+    content: string,
+  }>
+> {
   try {
     const files = await fs.promises.readdir(dir);
     // TODO for testing purposes only
     const filteredForTesting = files.filter((file) => file.endsWith(".ts"));
-
     const contents = await Promise.all(
       filteredForTesting.map(async (file) => {
         const filePath = path.join(dir, file);
         console.log(filePath);
-
         const content = await fs.promises.readFile(filePath, "utf-8");
-        return { file, content: content.toString() };
+        return {
+          file,
+          content: content.toString(),
+        };
       })
     );
     return contents;
@@ -52,7 +50,6 @@ async function readDirectoryFiles(
     throw error;
   }
 }
-
 function lint(code: string): void {
   const linter = new eslint.Linter();
   const lintResult = linter.verify(code, {
@@ -65,7 +62,6 @@ function lint(code: string): void {
       quotes: ["error", "double"],
     },
   });
-
   if (lintResult.length > 0) {
     console.error("Lint errors found:");
     lintResult.forEach((error) => {
@@ -77,28 +73,25 @@ function lint(code: string): void {
     console.log("No lint errors found.");
   }
 }
-
 function getAST(code: string): babel.ParseResult<any> {
   return babel.parse(code, {
     sourceType: "module",
     plugins: ["typescript"],
   });
 }
-
 function generateCodeFromAST(ast: babel.ParseResult<any>): string {
   return generate(ast).code;
 }
-
 readDirectoryFiles(__dirname)
   .then((contents) => {
     for (const file of contents) {
       const ast = getAST(file.content);
       traverseAST(ast);
       const code = generateCodeFromAST(ast);
-
-      const formattedCode = prettier.format(code, { parser: "babel" });
+      const formattedCode = prettier.format(code, {
+        parser: "babel",
+      });
       fs.writeFileSync("testGeneratedCode.ts", formattedCode, "utf-8");
-
       lint(formattedCode);
     }
   })
