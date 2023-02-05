@@ -1,0 +1,20 @@
+{
+  "name": "code-migrations",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RomanKyklin/code-migrations.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RomanKyklin/code-migrations/issues"
+  },
+  "homepage": "https://github.com/RomanKyklin/code-migrations#readme"
+}
