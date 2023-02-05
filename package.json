@@ -16,5 +16,18 @@
   "bugs": {
     "url": "https://github.com/RomanKyklin/code-migrations/issues"
   },
-  "homepage": "https://github.com/RomanKyklin/code-migrations#readme"
+  "homepage": "https://github.com/RomanKyklin/code-migrations#readme",
+  "dependencies": {
+    "@babel/generator": "^7.20.14",
+    "@babel/parser": "^7.20.15",
+    "@types/yargs": "^17.0.22",
+    "eslint": "^8.33.0",
+    "prettier": "^2.8.3",
+    "ts-node": "^10.9.1",
+    "yargs": "^17.6.2"
+  },
+  "devDependencies": {
+    "@babel/types": "^7.20.7",
+    "typescript": "^4.9.5"
+  }
 }

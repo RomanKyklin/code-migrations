@@ -15,9 +15,14 @@ async function readDirectoryFiles(
 ): Promise<Array<{ file: string; content: string }>> {
   try {
     const files = await fs.promises.readdir(dir);
+    // TODO for testing purposes only
+    const filteredForTesting = files.filter((file) => file.endsWith(".ts"));
+
     const contents = await Promise.all(
-      files.map(async (file) => {
+      filteredForTesting.map(async (file) => {
         const filePath = path.join(dir, file);
+        console.log(filePath);
+
         const content = await fs.promises.readFile(filePath, "utf-8");
         return { file, content: content.toString() };
       })
@@ -40,42 +45,52 @@ async function main() {
   //   const directory = argv.path as MyArgv["path"];
 }
 
+function lint(code: string): void {
+  const linter = new eslint.Linter();
+  const lintResult = linter.verify(code, {
+    parserOptions: {
+      ecmaVersion: 2020,
+      sourceType: "module",
+    },
+    rules: {
+      semi: ["error", "always"],
+      quotes: ["error", "double"],
+    },
+  });
+
+  if (lintResult.length > 0) {
+    console.error("Lint errors found:");
+    lintResult.forEach((error) => {
+      console.error(
+        `- ${error.message} at line ${error.line} column ${error.column}`
+      );
+    });
+  } else {
+    console.log("No lint errors found.");
+  }
+}
+
+function getAST(code: string): babel.ParseResult<any> {
+  return babel.parse(code, {
+    sourceType: "module",
+    plugins: ["typescript"],
+  });
+}
+
+function generateCodeFromAST(ast: babel.ParseResult<any>): string { 
+  return generate(ast).code;
+}
+
 readDirectoryFiles(__dirname)
   .then((contents) => {
-    for (const content of contents) {
-      console.log(content);
+    for (const file of contents) {
+      const ast = getAST(file.content);
+      const code = generateCodeFromAST(ast);
 
-      const ast = babel.parse(content.content, {
-        sourceType: "module",
-        plugins: ["typescript"],
-      });
-
-      const code = generate(ast).code;
       const formattedCode = prettier.format(code, { parser: "babel" });
       fs.writeFileSync("testGeneratedCode.ts", formattedCode, "utf-8");
 
-      const linter = new eslint.Linter();
-      const lintResult = linter.verify(formattedCode, {
-        parserOptions: {
-          ecmaVersion: 2020,
-          sourceType: "module",
-        },
-        rules: {
-          semi: ["error", "always"],
-          quotes: ["error", "double"],
-        },
-      });
-
-      if (lintResult.length > 0) {
-        console.error("Lint errors found:");
-        lintResult.forEach((error) => {
-          console.error(
-            `- ${error.message} at line ${error.line} column ${error.column}`
-          );
-        });
-      } else {
-        console.log("No lint errors found.");
-      }
+      lint(formattedCode)
     }
   })
   .catch((error) => {
