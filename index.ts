@@ -6,32 +6,44 @@ import generate from "@babel/generator";
 import * as prettier from "prettier";
 import * as eslint from "eslint";
 import * as babelCore from "@babel/core";
-import * as t from "@babel/types";
+import * as types from "@babel/types";
 
+export type Types = typeof types;
+export type TransformFunction = (path: string, types: Types) => void;
+export type ProcessArgs = string[]
+export interface Options {
+  path: string;
+  transform: string;
+}
+export interface Content {
+  file: string;
+  content: string;
+}
 
-function functionToStringTransformer(path) {
-  const node = path.node;
-  if (!t.isFunctionDeclaration(node)) return;
-  path.replaceWith(t.stringTypeAnnotation());
-};
-
-
-function parseArgumentsIntoOptions(rawArgs): string {
+function parseArgumentsIntoOptions(rawArgs: ProcessArgs): Options {
   const args = yargs(rawArgs)
     .option("path", {
       alias: "path",
       type: "string",
       demandOption: true,
     })
+    .option("transform", {
+      alias: "transform",
+      type: "string",
+      demandOption: true,
+    })
     .parseSync();
 
-  return args.path;
+  return {
+    path: args.path,
+    transform: args.transform,
+  };
 }
 
-function traverseAST(ast: babel.ParseResult<any>): void {
+function traverseAST(ast: babel.ParseResult<any>, transformFunc: TransformFunction): void {
   const visitor = {
     enter(path) {
-      functionToStringTransformer(path);
+      transformFunc(path, types);
     },
   };
 
@@ -40,7 +52,7 @@ function traverseAST(ast: babel.ParseResult<any>): void {
 
 async function readDirectoryFiles(
   dir: string
-): Promise<Array<{ file: string; content: string }>> {
+): Promise<Array<Content>> {
   try {
     const files = await fs.promises.readdir(dir);
     // TODO for testing purposes only
@@ -95,19 +107,29 @@ function generateCodeFromAST(ast: babel.ParseResult<any>): string {
   return generate(ast).code;
 }
 
-readDirectoryFiles(__dirname)
-  .then((contents) => {
-    for (const file of contents) {
-      const ast = getAST(file.content);
-      traverseAST(ast);
-      const code = generateCodeFromAST(ast);
+function handle(contents: Array<Content>, transformFunc: TransformFunction): void {
+  for (const file of contents) {
+    const ast = getAST(file.content);
+    traverseAST(ast, transformFunc);
+    const code = generateCodeFromAST(ast);
 
-      const formattedCode = prettier.format(code, { parser: "babel" });
-      fs.writeFileSync("testGeneratedCode.ts", formattedCode, "utf-8");
+    const formattedCode = prettier.format(code, { parser: "babel" });
+    fs.writeFileSync("testGeneratedCode.ts", formattedCode, "utf-8");
 
-      lint(formattedCode);
-    }
-  })
-  .catch((error) => {
-    console.error(error);
-  });
+    lint(formattedCode);
+  }
+}
+
+async function main() {
+  const { transform, path } = parseArgumentsIntoOptions(process.argv.slice(2));
+
+  const [contents, transformFunction] = await Promise.all([
+    readDirectoryFiles(__dirname + "/" + path),
+    fs.promises.readFile(__dirname + transform, "utf-8"),
+  ]);
+
+  const transformFunc = eval(transformFunction);
+  handle(contents, transformFunc);
+}
+
+main();
