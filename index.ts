@@ -99,11 +99,17 @@ function generateCodeFromAST(ast: babel.ParseResult<any>): string {
 
 function handle(
   contents: Array<Content>,
-  transformFunc: TransformFunction
+  transformFunc: TransformFunction | Array<TransformFunction>
 ): void {
   for (const file of contents) {
     const ast = getAST(file.content);
-    traverseAST(ast, transformFunc);
+
+    if (Array.isArray(transformFunc)) {
+      transformFunc.forEach((func) => traverseAST(ast, func));
+    } else {
+      traverseAST(ast, transformFunc);
+    }
+    
     const code = generateCodeFromAST(ast);
 
     const formattedCode = prettier.format(code, { parser: "babel" });

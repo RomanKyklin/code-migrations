@@ -8,3 +8,12 @@ export const exampleTransform: TransformFunction = (
   if (!types.isFunctionDeclaration(node)) return;
   path.replaceWith(types.stringTypeAnnotation());
 };
+
+export const exampleImportsTransform: TransformFunction = (
+  path: any,
+  types: Types
+) => {
+  if (types.isImportDeclaration(path.node)) {
+    path.node.source.value = "new-module";
+  }
+};
