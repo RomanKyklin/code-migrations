@@ -1,19 +1,18 @@
-import { TransformFunction, Types } from "../types/types";
+import { Visitor } from "@babel/core";
+import { Types, TransformFunction } from "../types/types";
 
-export const exampleTransform: TransformFunction = (
-  path: any,
-  types: Types
-): void => {
-  const node = path.node;
-  if (!types.isFunctionDeclaration(node)) return;
-  path.replaceWith(types.stringTypeAnnotation());
-};
+const transform: TransformFunction = (t: Types): Visitor => ({
+  enter(path: any) {
+    const node = path.node;
 
-export const exampleImportsTransform: TransformFunction = (
-  path: any,
-  types: Types
-) => {
-  if (types.isImportDeclaration(path.node)) {
-    path.node.source.value = "new-module";
-  }
-};
+    if (t.isImportDeclaration(node)) {
+      path.node.source.value = "new-module";
+    }
+
+    if (t.isFunctionDeclaration(node)) {
+      path.replaceWith(t.stringTypeAnnotation());
+    }
+  },
+});
+
+export default transform;

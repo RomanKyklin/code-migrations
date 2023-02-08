@@ -1,13 +1,14 @@
-import * as types from "@babel/types";
+import { Visitor } from "@babel/core";
+import * as babelCore from "@babel/core";
 
-export type Types = typeof types;
-export type TransformFunction = (path: any, types: Types) => void;
+export type Types = typeof babelCore.types;
+export type TransformFunction = (types: Types) => Visitor;
 export type ProcessArgs = string[];
 export interface Options {
-  path: string;
+  path: string | RegExp;
+  transform: string | RegExp;
 }
 export interface Content {
-  file: string;
   content: string;
 }
 export interface Config {
