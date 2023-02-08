@@ -106,15 +106,23 @@ async function handlePaths(
 
   for (const path of paths) {
     try {
-      const content = (await fs.promises.readFile(path, "utf-8")).toString();
-      handleFile(content, visitor);
+      const content = await fs.promises.readFile(path, "utf-8");
+      handleFile(content, path, visitor);
     } catch (error: any) {
       throw new Error("Error reading file: " + error.message);
     }
   }
 }
 
-function handleFile(content: string, visitor: babelCore.Visitor): void {
+function handleFile(
+  content: string,
+  path: string,
+  visitor: babelCore.Visitor
+): void {
+  if (path == null) {
+    throw new Error("Path is not defined");
+  }
+
   if (content == null) {
     throw new Error("Content is not defined");
   }
@@ -130,7 +138,7 @@ function handleFile(content: string, visitor: babelCore.Visitor): void {
     const code = generate(ast).code;
 
     const formattedCode = prettier.format(code, { parser: "babel" });
-    fs.writeFileSync("testGeneratedCode.ts", formattedCode, "utf-8");
+    fs.writeFileSync(path, formattedCode, "utf-8");
 
     lint(formattedCode);
   } catch (error: any) {
@@ -193,7 +201,7 @@ async function main(): Promise<void> {
     const { paths, transformPaths } = await getPaths(path, transform);
     const getVisitorFunction = await getVisitor(transformPaths[0]);
     const visitor = getVisitorFunction(babelCore.types);
-  
+
     handlePaths(paths, visitor);
   } catch (error: any) {
     throw new Error("Error: " + error.message);
