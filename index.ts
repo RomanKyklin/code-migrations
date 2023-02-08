@@ -73,7 +73,7 @@ function lint(code: string): void {
 function getAST(code: string): babel.ParseResult<any> {
   return babel.parse(code, {
     sourceType: "module",
-    plugins: ["typescript"],
+    plugins: ["typescript", "decorators-legacy"],
   });
 }
 
@@ -109,7 +109,7 @@ async function handlePaths(
       const content = await fs.promises.readFile(path, "utf-8");
       handleFile(content, path, visitor);
     } catch (error: any) {
-      throw new Error("Error reading file: " + error.message);
+      throw new Error("Error reading file: " + error.message + " " + path);
     }
   }
 }
@@ -137,12 +137,12 @@ function handleFile(
 
     const code = generate(ast).code;
 
-    const formattedCode = prettier.format(code, { parser: "babel" });
+    const formattedCode = prettier.format(code, { parser: "babel-ts" });
     fs.writeFileSync(path, formattedCode, "utf-8");
 
     lint(formattedCode);
   } catch (error: any) {
-    throw new Error("Error parsing file: " + error.message);
+    throw new Error("Error parsing file: " + error.message + " " + path);
   }
 }
 
