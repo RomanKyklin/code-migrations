@@ -92,6 +92,18 @@ function globPromise(
   });
 }
 
+async function* readFileGenerator(filePath: string): AsyncGenerator<string> {
+  try {
+    const file = fs.createReadStream(filePath, "utf-8");
+
+    for await (const chunk of file) {
+      yield chunk;
+    }
+  } catch (error: any) {
+    throw error;
+  }
+}
+
 async function handlePaths(
   paths: Array<string>,
   visitor: babelCore.Visitor
@@ -106,8 +118,11 @@ async function handlePaths(
 
   for (const path of paths) {
     try {
-      const content = await fs.promises.readFile(path, "utf-8");
-      handleFile(content, path, visitor);
+      const content: AsyncGenerator<string> = readFileGenerator(path);
+
+      for await (const chunk of content) {
+        handleFile(chunk, path, visitor);
+      }
     } catch (error: any) {
       throw new Error("Error reading file: " + error.message + " " + path);
     }
@@ -138,7 +153,7 @@ function handleFile(
     const code = generate(ast).code;
 
     const formattedCode = prettier.format(code, { parser: "babel-ts" });
-    fs.writeFileSync(path, formattedCode, "utf-8");
+    fs.writeFileSync("./test.ts", formattedCode, "utf-8");
 
     lint(formattedCode);
   } catch (error: any) {
