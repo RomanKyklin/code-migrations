@@ -5,8 +5,9 @@ import * as babelCore from "@babel/core";
 import yargs from "yargs";
 import { getAST, traverseAST } from "../ast/ast";
 import { format, lint } from "../lint/lint";
-import { ProcessArgs, Options } from "../types/types";
+import { ProcessArgs, Options, Content } from "../types/types";
 import { Node } from "@babel/types";
+import pathModule from "path";
 
 export function globPromise(
   pattern: string,
@@ -23,11 +24,11 @@ export function globPromise(
   });
 }
 
-function writeContents(contents: string[]): void {
+function writeContents(contents: Content[]): void {
   try {
-    contents.forEach((content) =>
-      fs.writeFileSync("./test.ts", content, "utf-8")
-    );
+    contents.forEach((content) => {
+      fs.writeFileSync(content.path, content.content, "utf-8");
+    });
   } catch (e: unknown) {
     console.error(e);
     throw new Error("Error writing file");
@@ -46,13 +47,17 @@ export async function handlePaths(
     throw new Error("Visitor is not defined");
   }
 
-  const contents: string[] = [];
+  const contents: Content[] = [];
 
   for (const path of paths) {
     try {
       const content = await fs.promises.readFile(path, "utf-8");
-      contents.push(handleFile(content, path, visitor));
+      contents.push({
+        content: handleFile(content, path, visitor),
+        path: pathModule.resolve(path),
+      });
     } catch (error: unknown) {
+      console.error(error);
       throw new Error("Error while reading file");
     }
   }
@@ -65,12 +70,8 @@ export function handleFile(
   path: string,
   visitor: babelCore.Visitor
 ): string {
-  if (path?.trim()) {
+  if (!path?.trim()) {
     throw new Error("Path is not defined");
-  }
-
-  if (content?.trim()) {
-    throw new Error("Content is not defined");
   }
 
   if (visitor == null) {
@@ -84,23 +85,23 @@ export function handleFile(
     lint(formattedCode);
     return formattedCode;
   } catch (error: unknown) {
+    console.error(error);
     throw new Error("Error parsing file");
   }
 }
 
 export async function getPaths(
-  path: string | RegExp,
-  transform: string | RegExp
+  path: string,
+  transform: string
 ): Promise<{
   paths: string[];
   transformPaths: string[];
 }> {
   const ignore = ["**/node_modules/**", "**/dist/**", "**/build/**"];
-  console.log(__dirname + "/" + path);
-  
+
   const [paths, transformPaths] = await Promise.all([
-    globPromise(__dirname + "/" + path, { ignore }),
-    globPromise(__dirname + "/" + transform, { ignore }),
+    globPromise(pathModule.resolve(path), { ignore }),
+    globPromise(pathModule.resolve(transform), { ignore }),
   ]);
 
   if (paths.length === 0) {

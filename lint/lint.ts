@@ -16,7 +16,7 @@ export function lint(code: string): void {
 
   if (lintResult.length > 0) {
     console.error("Lint errors found:");
-    lintResult.forEach((error) => {
+    lintResult.forEach((error) => {     
       console.error(
         `- ${error.message} at line ${error.line} column ${error.column}`
       );

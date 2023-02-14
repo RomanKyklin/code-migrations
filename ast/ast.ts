@@ -25,7 +25,7 @@ export function getAST(code: string): ParseResult {
 }
 
 export async function getVisitor(path: string): Promise<TransformFunction> {
-  if (path?.trim()) {
+  if (!path?.trim()) {
     throw new Error("Path is not defined");
   }
 
