@@ -37,7 +37,7 @@ export async function getVisitor(path: string): Promise<TransformFunction> {
     throw new Error("Error while importing transform file");
   }
 
-  if (visitor == null || typeof visitor !== "function") {
+  if (typeof visitor !== "function") {
     throw new Error("Visitor is not defined or is not an function");
   }
 
